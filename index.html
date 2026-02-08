@@ -1183,6 +1183,7 @@
         // Firebase Configuration
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
         import { getDatabase, ref, set, get, onValue } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+        import { getAuth, signInAnonymously, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 
         // Your web app's Firebase configuration
         const firebaseConfig = {
@@ -1198,6 +1199,7 @@
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
+        const auth = getAuth(app);
         
         // Admin password (you can change this)
         const ADMIN_PASSWORD = "admin123";
@@ -1768,9 +1770,15 @@
         }
 
         // Admin Mode Functions
-        window.toggleAdminMode = function() {
+        window.toggleAdminMode = async function() {
             if (isAdminMode) {
-                // Logout
+                // Logout - also sign out of Firebase
+                try {
+                    await signOut(auth);
+                    console.log('Firebase sign out successful');
+                } catch (error) {
+                    console.error('Firebase sign out error:', error);
+                }
                 isAdminMode = false;
                 document.body.classList.remove('admin-mode');
                 document.getElementById('adminToggleText').textContent = '🔒 Admin Mode';
@@ -1784,21 +1792,30 @@
             }
         };
 
-        window.checkAdminPassword = function() {
+        window.checkAdminPassword = async function() {
             const password = document.getElementById('adminPassword').value;
             if (password === ADMIN_PASSWORD) {
-                isAdminMode = true;
-                document.body.classList.add('admin-mode');
-                document.getElementById('adminToggleText').textContent = '🔓 Logout';
-                closeAuthModal();
-                
-                // Add admin indicator
-                const indicator = document.createElement('div');
-                indicator.className = 'admin-mode-indicator';
-                indicator.textContent = '✓ Admin Mode Active';
-                document.body.appendChild(indicator);
-                
-                console.log('Admin mode enabled, isAdminMode =', isAdminMode);
+                try {
+                    // Sign in anonymously to Firebase for write access
+                    await signInAnonymously(auth);
+                    console.log('Firebase anonymous auth successful');
+                    
+                    isAdminMode = true;
+                    document.body.classList.add('admin-mode');
+                    document.getElementById('adminToggleText').textContent = '🔓 Logout';
+                    closeAuthModal();
+                    
+                    // Add admin indicator
+                    const indicator = document.createElement('div');
+                    indicator.className = 'admin-mode-indicator';
+                    indicator.textContent = '✓ Admin Mode Active';
+                    document.body.appendChild(indicator);
+                    
+                    console.log('Admin mode enabled, isAdminMode =', isAdminMode);
+                } catch (error) {
+                    console.error('Firebase auth error:', error);
+                    alert('Login failed: ' + error.message + '\n\nMake sure Anonymous Authentication is enabled in your Firebase Console under Authentication > Sign-in method.');
+                }
             } else {
                 alert('Incorrect password');
             }
