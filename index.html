@@ -943,7 +943,7 @@
                 <button class="btn-primary" onclick="closeAuthModal()">Cancel</button>
             </div>
             <p style="margin-top: 15px; font-size: 12px; color: #666;">
-                Default password: <code>admin123</code> (change this in Firebase config)
+                It's a secret.
             </p>
         </div>
     </div>
@@ -1202,7 +1202,7 @@
         const auth = getAuth(app);
         
         // Admin password (you can change this)
-        const ADMIN_PASSWORD = "admin123";
+        const ADMIN_PASSWORD = "dontlookhere";
         
         // Admin mode state
         let isAdminMode = false;
@@ -1671,8 +1671,8 @@
         }
 
         // Version/Build tracking
-        const BUILD_TIMESTAMP = '2026-02-07 17:32:24';
-        const VERSION = '1.1.1';
+        const BUILD_TIMESTAMP = '2026-02-07 17:37:24';
+        const VERSION = '1.1.2';
         
         // Show version indicator
         const versionEl = document.getElementById('versionIndicator');
