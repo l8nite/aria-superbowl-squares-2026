@@ -965,6 +965,7 @@
         </div>
 
         <div class="content">
+            <!-- Admin-only setup section -->
             <div class="setup-section admin-only">
                 <h2 style="margin-bottom: 20px; color: #333;">Game Setup</h2>
                 
@@ -1052,10 +1053,10 @@
                     </div>
                 </div>
 
-                <div id="payoutSection" class="score-section hidden" style="background: #d4edda; border-color: #28a745;">
-                    <h3 style="margin-bottom: 15px; color: #333;">💰 Quarter Payouts</h3>
-                    
-                    <div class="admin-only" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                <!-- Admin-only: Record payout controls -->
+                <div id="payoutAdminSection" class="score-section hidden admin-only" style="background: #d4edda; border-color: #28a745;">
+                    <h3 style="margin-bottom: 15px; color: #333;">💰 Record Quarter Payouts</h3>
+                    <div style="background: white; padding: 20px; border-radius: 8px;">
                         <h4 style="margin-bottom: 15px; color: #333;">Record Payout ($125 each)</h4>
                         <div class="payout-input-grid">
                             <div class="input-group" style="margin-bottom: 0;">
@@ -1080,34 +1081,39 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <div class="payout-grid">
-                        <div class="payout-quarter">
-                            <h4>1st Quarter</h4>
-                            <div class="quarter-result" id="quarter1Result">Not recorded</div>
-                        </div>
+            <!-- Payout display section - visible to ALL users when board exists -->
+            <div id="payoutSection" class="hidden" style="background: #d4edda; border-color: #28a745; padding: 20px; border-radius: 8px; border: 2px solid #28a745; margin-bottom: 20px;">
+                <h3 style="margin-bottom: 15px; color: #333;">💰 Quarter Payouts</h3>
 
-                        <div class="payout-quarter">
-                            <h4>2nd Quarter</h4>
-                            <div class="quarter-result" id="quarter2Result">Not recorded</div>
-                        </div>
-
-                        <div class="payout-quarter">
-                            <h4>3rd Quarter</h4>
-                            <div class="quarter-result" id="quarter3Result">Not recorded</div>
-                        </div>
-
-                        <div class="payout-quarter">
-                            <h4>Final</h4>
-                            <div class="quarter-result" id="quarter4Result">Not recorded</div>
-                        </div>
+                <div class="payout-grid">
+                    <div class="payout-quarter">
+                        <h4>1st Quarter</h4>
+                        <div class="quarter-result" id="quarter1Result">Not recorded</div>
                     </div>
 
-                    <div style="margin-top: 20px; padding: 15px; background: white; border-radius: 6px; border: 2px solid #28a745;">
-                        <h4 style="margin-bottom: 10px; color: #333;">Payout Summary</h4>
-                        <div id="payoutSummary" style="font-size: 14px; color: #666;">
-                            No payouts recorded yet
-                        </div>
+                    <div class="payout-quarter">
+                        <h4>2nd Quarter</h4>
+                        <div class="quarter-result" id="quarter2Result">Not recorded</div>
+                    </div>
+
+                    <div class="payout-quarter">
+                        <h4>3rd Quarter</h4>
+                        <div class="quarter-result" id="quarter3Result">Not recorded</div>
+                    </div>
+
+                    <div class="payout-quarter">
+                        <h4>Final</h4>
+                        <div class="quarter-result" id="quarter4Result">Not recorded</div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 20px; padding: 15px; background: white; border-radius: 6px; border: 2px solid #28a745;">
+                    <h4 style="margin-bottom: 10px; color: #333;">Payout Summary</h4>
+                    <div id="payoutSummary" style="font-size: 14px; color: #666;">
+                        No payouts recorded yet
                     </div>
                 </div>
             </div>
@@ -1239,6 +1245,7 @@
         let boardGenerated = false;
         let horizontalNumbers = [];
         let verticalNumbers = [];
+        let squareAssignments = []; // Persisted shuffled assignments
         let selectedTeam1 = '';
         let selectedTeam2 = '';
         let quarterPayouts = {
@@ -1299,7 +1306,7 @@
             
             updateParticipantList();
             updateStats();
-            if (isAdminMode) saveToFirebase(); // Save to Firebase
+            if (isAdminMode) saveToFirebase();
         }
 
         window.removeParticipant = function(index) {
@@ -1307,7 +1314,7 @@
             updateParticipantList();
             updateStats();
             boardGenerated = false;
-            if (isAdminMode) saveToFirebase(); // Save to Firebase
+            if (isAdminMode) saveToFirebase();
         }
 
         function updateParticipantList() {
@@ -1361,20 +1368,6 @@
             selectedTeam1 = team1;
             selectedTeam2 = team2;
 
-            // Update team headers with logos
-            document.getElementById('team1Name').textContent = team1;
-            document.getElementById('team1Logo').src = nflTeams[team1];
-            document.getElementById('team2Name').textContent = team2;
-            document.getElementById('team2Logo').src = nflTeams[team2];
-
-            // Update score section labels
-            document.getElementById('team1ScoreLabel').textContent = `${team1} Score`;
-            document.getElementById('team2ScoreLabel').textContent = `${team2} Score`;
-
-            // Update payout section labels
-            document.getElementById('payoutTeam1Label').textContent = `${team1} Score`;
-            document.getElementById('payoutTeam2Label').textContent = `${team2} Score`;
-
             // Generate random numbers for axes if not already generated
             if (horizontalNumbers.length === 0) {
                 horizontalNumbers = shuffleArray([...Array(10).keys()]);
@@ -1382,15 +1375,47 @@
             }
 
             // Create array of all squares and assign to participants
-            let squareAssignments = [];
+            let tempAssignments = [];
             participants.forEach(participant => {
                 for (let i = 0; i < participant.squares; i++) {
-                    squareAssignments.push(participant.name);
+                    tempAssignments.push(participant.name);
                 }
             });
 
-            // Shuffle assignments
-            squareAssignments = shuffleArray(squareAssignments);
+            // Shuffle assignments and store persistently
+            squareAssignments = shuffleArray(tempAssignments);
+
+            // Render the board using shared rendering function
+            renderBoard();
+            boardGenerated = true;
+        }
+        
+        window.generateBoard = function() {
+            _generateBoard();
+            console.log('generateBoard called, isAdminMode:', isAdminMode);
+            if (isAdminMode) {
+                console.log('Saving board to Firebase...');
+                saveToFirebase();
+            }
+        };
+
+        // Shared board rendering function - used by both generateBoard and loadFromFirebase
+        function renderBoard() {
+            if (!selectedTeam1 || !selectedTeam2) return;
+
+            // Update team headers with logos
+            document.getElementById('team1Name').textContent = selectedTeam1;
+            document.getElementById('team1Logo').src = nflTeams[selectedTeam1];
+            document.getElementById('team2Name').textContent = selectedTeam2;
+            document.getElementById('team2Logo').src = nflTeams[selectedTeam2];
+
+            // Update score section labels
+            document.getElementById('team1ScoreLabel').textContent = `${selectedTeam1} Score`;
+            document.getElementById('team2ScoreLabel').textContent = `${selectedTeam2} Score`;
+
+            // Update payout section labels
+            document.getElementById('payoutTeam1Label').textContent = `${selectedTeam1} Score`;
+            document.getElementById('payoutTeam2Label').textContent = `${selectedTeam2} Score`;
 
             // Build the grid
             const grid = document.getElementById('squaresGrid');
@@ -1438,18 +1463,29 @@
 
             document.getElementById('gridContainer').classList.remove('hidden');
             document.getElementById('scoreSection').classList.remove('hidden');
+            document.getElementById('payoutAdminSection').classList.remove('hidden');
             document.getElementById('payoutSection').classList.remove('hidden');
-            boardGenerated = true;
+
+            // Re-highlight any recorded winners on the grid
+            highlightRecordedWinners();
         }
-        
-        window.generateBoard = function() {
-            _generateBoard();
-            console.log('generateBoard called, isAdminMode:', isAdminMode);
-            if (isAdminMode) {
-                console.log('Saving board to Firebase...');
-                saveToFirebase();
+
+        // Highlight winning squares for all recorded quarter payouts
+        function highlightRecordedWinners() {
+            for (let i = 1; i <= 4; i++) {
+                if (quarterPayouts[i]) {
+                    const p = quarterPayouts[i];
+                    const team1Digit = p.team1Score % 10;
+                    const team2Digit = p.team2Score % 10;
+                    const colIndex = horizontalNumbers.indexOf(team1Digit);
+                    const rowIndex = verticalNumbers.indexOf(team2Digit);
+                    const winningSquare = document.querySelector(`[data-row="${rowIndex}"][data-col="${colIndex}"]`);
+                    if (winningSquare) {
+                        winningSquare.classList.add('winning-square');
+                    }
+                }
             }
-        };
+        }
 
         function _recordQuarterPayout() {
             const quarter = parseInt(document.getElementById('quarterSelect').value);
@@ -1481,17 +1517,8 @@
                 payout: 125
             };
 
-            // Display result
-            const resultDiv = document.getElementById(`quarter${quarter}Result`);
-            resultDiv.className = 'quarter-result recorded';
-            resultDiv.innerHTML = `
-                <div class="score-display">${selectedTeam1}: ${team1Score} | ${selectedTeam2}: ${team2Score}</div>
-                <div class="winner-name">${winnerName}</div>
-                <div class="payout-display">$125</div>
-            `;
-
-            // Update summary
-            updatePayoutSummary();
+            // Update display
+            updatePayoutDisplay();
 
             // Clear inputs
             document.getElementById('payoutTeam1Score').value = '';
@@ -1502,12 +1529,9 @@
                 document.getElementById('quarterSelect').value = quarter + 1;
             }
 
-            // Highlight on grid temporarily
+            // Highlight winning square permanently
             if (winningSquare) {
                 winningSquare.classList.add('winning-square');
-                setTimeout(() => {
-                    winningSquare.classList.remove('winning-square');
-                }, 3000);
             }
         }
         
@@ -1555,7 +1579,8 @@
             horizontalNumbers = shuffleArray([...Array(10).keys()]);
             verticalNumbers = shuffleArray([...Array(10).keys()]);
             
-            _generateBoard();
+            // Re-render with new numbers but same assignments
+            renderBoard();
         }
         
         window.randomizeNumbers = function() {
@@ -1584,10 +1609,13 @@
             const colIndex = horizontalNumbers.indexOf(team1Digit);
             const rowIndex = verticalNumbers.indexOf(team2Digit);
 
-            // Remove previous winner highlighting
+            // Remove previous winner highlighting (only non-recorded ones)
             document.querySelectorAll('.winning-square').forEach(cell => {
                 cell.classList.remove('winning-square');
             });
+
+            // Re-highlight recorded winners
+            highlightRecordedWinners();
 
             // Find and highlight the winning square
             const winningSquare = document.querySelector(`[data-row="${rowIndex}"][data-col="${colIndex}"]`);
@@ -1615,8 +1643,8 @@
         }
 
         // Version/Build tracking
-        const BUILD_TIMESTAMP = '2025-02-07 16:00:00';
-        const VERSION = '1.0.0';
+        const BUILD_TIMESTAMP = 'BUILD_TIME_PLACEHOLDER';
+        const VERSION = '1.1.0';
         
         // Show version indicator
         const versionEl = document.getElementById('versionIndicator');
@@ -1694,7 +1722,7 @@
                 updateParticipantList();
                 updateStats();
                 document.getElementById('bulkInput').value = '';
-                if (isAdminMode) saveToFirebase(); // Save to Firebase
+                if (isAdminMode) saveToFirebase();
             }
 
             let message = `Added ${successCount} participant(s)`;
@@ -1712,9 +1740,6 @@
         window.clearBulkInput = function() {
             document.getElementById('bulkInput').value = '';
         }
-
-        // Initialize
-        populateTeamDropdowns();
 
         // Admin Mode Functions
         window.toggleAdminMode = function() {
@@ -1766,13 +1791,20 @@
         async function saveToFirebase() {
             if (!isAdminMode) return;
             
+            // Convert quarterPayouts to Firebase-safe format (no null values)
+            const safeQuarterPayouts = {};
+            for (let i = 1; i <= 4; i++) {
+                safeQuarterPayouts[i] = quarterPayouts[i] || false;
+            }
+            
             const gameData = {
                 selectedTeam1,
                 selectedTeam2,
                 participants,
                 horizontalNumbers,
                 verticalNumbers,
-                quarterPayouts,
+                squareAssignments, // Save the shuffled assignments
+                quarterPayouts: safeQuarterPayouts,
                 boardGenerated,
                 lastUpdated: Date.now()
             };
@@ -1785,26 +1817,46 @@
             }
         }
 
+        function loadGameData(data) {
+            selectedTeam1 = data.selectedTeam1 || '';
+            selectedTeam2 = data.selectedTeam2 || '';
+            participants = data.participants || [];
+            horizontalNumbers = data.horizontalNumbers || [];
+            verticalNumbers = data.verticalNumbers || [];
+            squareAssignments = data.squareAssignments || [];
+            boardGenerated = data.boardGenerated || false;
+
+            // Restore quarterPayouts from Firebase-safe format
+            quarterPayouts = {1: null, 2: null, 3: null, 4: null};
+            if (data.quarterPayouts) {
+                for (let i = 1; i <= 4; i++) {
+                    const val = data.quarterPayouts[i];
+                    quarterPayouts[i] = (val && val !== false) ? val : null;
+                }
+            }
+
+            // If we have old data without squareAssignments, rebuild them (won't be shuffled the same way)
+            if (squareAssignments.length === 0 && participants.length > 0) {
+                participants.forEach(participant => {
+                    for (let i = 0; i < participant.squares; i++) {
+                        squareAssignments.push(participant.name);
+                    }
+                });
+            }
+        }
+
         async function loadFromFirebase() {
             try {
                 const snapshot = await get(ref(database, 'gameBoard'));
                 if (snapshot.exists()) {
                     const data = snapshot.val();
-                    
-                    // Load data
-                    selectedTeam1 = data.selectedTeam1 || '';
-                    selectedTeam2 = data.selectedTeam2 || '';
-                    participants = data.participants || [];
-                    horizontalNumbers = data.horizontalNumbers || [];
-                    verticalNumbers = data.verticalNumbers || [];
-                    quarterPayouts = data.quarterPayouts || {1: null, 2: null, 3: null, 4: null};
-                    boardGenerated = data.boardGenerated || false;
+                    loadGameData(data);
 
                     // Update UI if board exists
-                    if (boardGenerated) {
+                    if (boardGenerated && horizontalNumbers.length > 0) {
                         document.getElementById('team1').value = selectedTeam1;
                         document.getElementById('team2').value = selectedTeam2;
-                        generateBoardFromData();
+                        renderBoard();
                     }
 
                     updateParticipantList();
@@ -1815,90 +1867,21 @@
                 console.error('Error loading from Firebase:', error);
             }
 
-            // Listen for real-time updates
+            // Listen for real-time updates (non-admin only)
             onValue(ref(database, 'gameBoard'), (snapshot) => {
                 if (snapshot.exists() && !isAdminMode) {
                     const data = snapshot.val();
-                    
-                    selectedTeam1 = data.selectedTeam1 || '';
-                    selectedTeam2 = data.selectedTeam2 || '';
-                    participants = data.participants || [];
-                    horizontalNumbers = data.horizontalNumbers || [];
-                    verticalNumbers = data.verticalNumbers || [];
-                    quarterPayouts = data.quarterPayouts || {1: null, 2: null, 3: null, 4: null};
-                    boardGenerated = data.boardGenerated || false;
+                    loadGameData(data);
 
-                    if (boardGenerated) {
+                    if (boardGenerated && horizontalNumbers.length > 0) {
                         document.getElementById('team1').value = selectedTeam1;
                         document.getElementById('team2').value = selectedTeam2;
-                        generateBoardFromData();
+                        renderBoard();
                     }
 
                     updatePayoutDisplay();
                 }
             });
-        }
-
-        function generateBoardFromData() {
-            // Similar to generateBoard but uses existing data
-            if (!selectedTeam1 || !selectedTeam2) return;
-
-            document.getElementById('team1Name').textContent = selectedTeam1;
-            document.getElementById('team1Logo').src = nflTeams[selectedTeam1];
-            document.getElementById('team2Name').textContent = selectedTeam2;
-            document.getElementById('team2Logo').src = nflTeams[selectedTeam2];
-
-            document.getElementById('payoutTeam1Label').textContent = `${selectedTeam1} Score`;
-            document.getElementById('payoutTeam2Label').textContent = `${selectedTeam2} Score`;
-
-            let squareAssignments = [];
-            participants.forEach(participant => {
-                for (let i = 0; i < participant.squares; i++) {
-                    squareAssignments.push(participant.name);
-                }
-            });
-
-            const grid = document.getElementById('squaresGrid');
-            grid.innerHTML = '';
-
-            const corner = document.createElement('div');
-            corner.className = 'grid-cell corner-cell';
-            corner.innerHTML = '🏈';
-            grid.appendChild(corner);
-
-            horizontalNumbers.forEach(num => {
-                const cell = document.createElement('div');
-                cell.className = 'grid-cell header-cell';
-                cell.textContent = num;
-                grid.appendChild(cell);
-            });
-
-            let assignmentIndex = 0;
-            for (let row = 0; row < 10; row++) {
-                const vertCell = document.createElement('div');
-                vertCell.className = 'grid-cell header-cell';
-                vertCell.textContent = verticalNumbers[row];
-                grid.appendChild(vertCell);
-
-                for (let col = 0; col < 10; col++) {
-                    const cell = document.createElement('div');
-                    cell.className = 'grid-cell';
-                    cell.dataset.row = row;
-                    cell.dataset.col = col;
-                    
-                    if (assignmentIndex < squareAssignments.length) {
-                        cell.textContent = squareAssignments[assignmentIndex];
-                        cell.classList.add('assigned-square');
-                        assignmentIndex++;
-                    }
-                    
-                    grid.appendChild(cell);
-                }
-            }
-
-            document.getElementById('gridContainer').classList.remove('hidden');
-            document.getElementById('scoreSection').classList.remove('hidden');
-            document.getElementById('payoutSection').classList.remove('hidden');
         }
 
         function updatePayoutDisplay() {
@@ -1920,8 +1903,6 @@
             }
             updatePayoutSummary();
         }
-
-
 
         // Initialize Firebase after everything is set up
         loadFromFirebase();
