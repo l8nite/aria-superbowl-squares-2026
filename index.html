@@ -1333,7 +1333,7 @@
             document.getElementById('remainingSquares').textContent = 100 - totalSquares;
         }
 
-        window.generateBoard = function() {
+        function _generateBoard() {
             const team1 = document.getElementById('team1').value;
             const team2 = document.getElementById('team2').value;
 
@@ -1441,8 +1441,17 @@
             document.getElementById('payoutSection').classList.remove('hidden');
             boardGenerated = true;
         }
+        
+        window.generateBoard = function() {
+            _generateBoard();
+            console.log('generateBoard called, isAdminMode:', isAdminMode);
+            if (isAdminMode) {
+                console.log('Saving board to Firebase...');
+                saveToFirebase();
+            }
+        };
 
-        window.recordQuarterPayout = function() {
+        function _recordQuarterPayout() {
             const quarter = parseInt(document.getElementById('quarterSelect').value);
             const team1Score = parseInt(document.getElementById('payoutTeam1Score').value);
             const team2Score = parseInt(document.getElementById('payoutTeam2Score').value);
@@ -1501,6 +1510,15 @@
                 }, 3000);
             }
         }
+        
+        window.recordQuarterPayout = function() {
+            _recordQuarterPayout();
+            console.log('recordQuarterPayout called, isAdminMode:', isAdminMode);
+            if (isAdminMode) {
+                console.log('Saving payout to Firebase...');
+                saveToFirebase();
+            }
+        };
 
         function updatePayoutSummary() {
             const summary = document.getElementById('payoutSummary');
@@ -1528,7 +1546,7 @@
             }
         }
 
-        window.randomizeNumbers = function() {
+        function _randomizeNumbers() {
             if (!boardGenerated) {
                 alert('Please generate the board first');
                 return;
@@ -1537,8 +1555,17 @@
             horizontalNumbers = shuffleArray([...Array(10).keys()]);
             verticalNumbers = shuffleArray([...Array(10).keys()]);
             
-            generateBoard();
+            _generateBoard();
         }
+        
+        window.randomizeNumbers = function() {
+            _randomizeNumbers();
+            console.log('randomizeNumbers called, isAdminMode:', isAdminMode);
+            if (isAdminMode) {
+                console.log('Saving randomized board to Firebase...');
+                saveToFirebase();
+            }
+        };
 
         window.highlightWinner = function() {
             const team1Score = parseInt(document.getElementById('team1Score').value);
@@ -1588,7 +1615,7 @@
         }
 
         // Version/Build tracking
-        const BUILD_TIMESTAMP = '2025-02-07 15:45:00';
+        const BUILD_TIMESTAMP = '2025-02-07 16:00:00';
         const VERSION = '1.0.0';
         
         // Show version indicator
@@ -1719,6 +1746,8 @@
                 indicator.className = 'admin-mode-indicator';
                 indicator.textContent = '✓ Admin Mode Active';
                 document.body.appendChild(indicator);
+                
+                console.log('Admin mode enabled, isAdminMode =', isAdminMode);
             } else {
                 alert('Incorrect password');
             }
@@ -1892,33 +1921,7 @@
             updatePayoutSummary();
         }
 
-        // Override existing functions to save to Firebase after they're defined
-        const _originalGenerateBoard = window.generateBoard;
-        window.generateBoard = function() {
-            _originalGenerateBoard();
-            if (isAdminMode) {
-                console.log('Saving board to Firebase...');
-                saveToFirebase();
-            }
-        };
 
-        const _originalRecordQuarterPayout = window.recordQuarterPayout;
-        window.recordQuarterPayout = function() {
-            _originalRecordQuarterPayout();
-            if (isAdminMode) {
-                console.log('Saving payout to Firebase...');
-                saveToFirebase();
-            }
-        };
-
-        const _originalRandomizeNumbers = window.randomizeNumbers;
-        window.randomizeNumbers = function() {
-            _originalRandomizeNumbers();
-            if (isAdminMode) {
-                console.log('Saving randomized board to Firebase...');
-                saveToFirebase();
-            }
-        };
 
         // Initialize Firebase after everything is set up
         loadFromFirebase();
