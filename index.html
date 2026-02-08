@@ -1652,7 +1652,6 @@
 
         // Initialize
         populateTeamDropdowns();
-        loadFromFirebase();
 
         // Admin Mode Functions
         window.toggleAdminMode = function() {
@@ -1857,24 +1856,36 @@
             updatePayoutSummary();
         }
 
-        // Override existing functions to save to Firebase
+        // Override existing functions to save to Firebase after they're defined
         const _originalGenerateBoard = window.generateBoard;
         window.generateBoard = function() {
             _originalGenerateBoard();
-            if (isAdminMode) saveToFirebase();
+            if (isAdminMode) {
+                console.log('Saving board to Firebase...');
+                saveToFirebase();
+            }
         };
 
         const _originalRecordQuarterPayout = window.recordQuarterPayout;
         window.recordQuarterPayout = function() {
             _originalRecordQuarterPayout();
-            if (isAdminMode) saveToFirebase();
+            if (isAdminMode) {
+                console.log('Saving payout to Firebase...');
+                saveToFirebase();
+            }
         };
 
         const _originalRandomizeNumbers = window.randomizeNumbers;
         window.randomizeNumbers = function() {
             _originalRandomizeNumbers();
-            if (isAdminMode) saveToFirebase();
+            if (isAdminMode) {
+                console.log('Saving randomized board to Firebase...');
+                saveToFirebase();
+            }
         };
+
+        // Initialize Firebase after everything is set up
+        loadFromFirebase();
 
         // Allow Enter key to add participant
         document.getElementById('participantName').addEventListener('keypress', function(e) {
