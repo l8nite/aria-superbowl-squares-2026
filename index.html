@@ -1570,6 +1570,29 @@
             }
         }
 
+        // Recalculate payout winners after number randomization
+        function recalculatePayoutWinners() {
+            let changed = false;
+            for (let i = 1; i <= 4; i++) {
+                if (quarterPayouts[i]) {
+                    const p = quarterPayouts[i];
+                    const team1Digit = p.team1Score % 10;
+                    const team2Digit = p.team2Score % 10;
+                    const colIndex = horizontalNumbers.indexOf(team1Digit);
+                    const rowIndex = verticalNumbers.indexOf(team2Digit);
+                    const winningSquare = document.querySelector(`[data-row="${rowIndex}"][data-col="${colIndex}"]`);
+                    const newWinner = winningSquare ? winningSquare.textContent : 'No winner';
+                    if (newWinner !== p.winner) {
+                        p.winner = newWinner;
+                        changed = true;
+                    }
+                }
+            }
+            if (changed) {
+                updatePayoutDisplay();
+            }
+        }
+
         function _randomizeNumbers() {
             if (!boardGenerated) {
                 alert('Please generate the board first');
@@ -1581,6 +1604,9 @@
             
             // Re-render with new numbers but same assignments
             renderBoard();
+
+            // Recalculate payout winners based on new number positions
+            recalculatePayoutWinners();
         }
         
         window.randomizeNumbers = function() {
@@ -1835,21 +1861,32 @@
                 }
             }
 
-            // If we have old data without squareAssignments, rebuild them (won't be shuffled the same way)
+            // If we have old data without squareAssignments, rebuild them
+            // NOTE: This won't match the original shuffle - admin needs to re-save
             if (squareAssignments.length === 0 && participants.length > 0) {
+                console.warn('No squareAssignments in Firebase data - rebuilding from participants (layout may differ from admin view). Admin should re-generate and save the board.');
+                let rebuilt = [];
                 participants.forEach(participant => {
                     for (let i = 0; i < participant.squares; i++) {
-                        squareAssignments.push(participant.name);
+                        rebuilt.push(participant.name);
                     }
                 });
+                squareAssignments = rebuilt;
             }
         }
 
         async function loadFromFirebase() {
+            let initialLoadDone = false;
             try {
                 const snapshot = await get(ref(database, 'gameBoard'));
                 if (snapshot.exists()) {
                     const data = snapshot.val();
+                    console.log('Initial Firebase load:', {
+                        hasSquareAssignments: !!(data.squareAssignments && data.squareAssignments.length),
+                        assignmentsLength: data.squareAssignments ? data.squareAssignments.length : 0,
+                        boardGenerated: data.boardGenerated,
+                        horizontalNumbers: data.horizontalNumbers,
+                    });
                     loadGameData(data);
 
                     // Update UI if board exists
@@ -1866,11 +1903,22 @@
             } catch (error) {
                 console.error('Error loading from Firebase:', error);
             }
+            initialLoadDone = true;
 
-            // Listen for real-time updates (non-admin only)
+            // Listen for real-time updates (non-admin only, skip first fire since we already loaded)
+            let isFirstFire = true;
             onValue(ref(database, 'gameBoard'), (snapshot) => {
+                // Skip the initial fire since we already loaded with get()
+                if (isFirstFire) {
+                    isFirstFire = false;
+                    return;
+                }
                 if (snapshot.exists() && !isAdminMode) {
                     const data = snapshot.val();
+                    console.log('Real-time Firebase update received:', {
+                        hasSquareAssignments: !!(data.squareAssignments && data.squareAssignments.length),
+                        assignmentsLength: data.squareAssignments ? data.squareAssignments.length : 0,
+                    });
                     loadGameData(data);
 
                     if (boardGenerated && horizontalNumbers.length > 0) {
