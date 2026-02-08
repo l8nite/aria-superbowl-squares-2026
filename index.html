@@ -1278,6 +1278,7 @@
             
             updateParticipantList();
             updateStats();
+            if (isAdminMode) saveToFirebase(); // Save to Firebase
         }
 
         function removeParticipant(index) {
@@ -1285,6 +1286,7 @@
             updateParticipantList();
             updateStats();
             boardGenerated = false;
+            if (isAdminMode) saveToFirebase(); // Save to Firebase
         }
 
         function updateParticipantList() {
@@ -1629,6 +1631,7 @@
                 updateParticipantList();
                 updateStats();
                 document.getElementById('bulkInput').value = '';
+                if (isAdminMode) saveToFirebase(); // Save to Firebase
             }
 
             let message = `Added ${successCount} participant(s)`;
