@@ -1249,7 +1249,7 @@
             team2Select.value = 'New England Patriots';
         }
 
-        function addParticipant() {
+        window.addParticipant = function() {
             const nameInput = document.getElementById('participantName');
             const squareInput = document.getElementById('squareCount');
             
@@ -1281,7 +1281,7 @@
             if (isAdminMode) saveToFirebase(); // Save to Firebase
         }
 
-        function removeParticipant(index) {
+        window.removeParticipant = function(index) {
             participants.splice(index, 1);
             updateParticipantList();
             updateStats();
@@ -1312,7 +1312,7 @@
             document.getElementById('remainingSquares').textContent = 100 - totalSquares;
         }
 
-        function generateBoard() {
+        window.generateBoard = function() {
             const team1 = document.getElementById('team1').value;
             const team2 = document.getElementById('team2').value;
 
@@ -1421,7 +1421,7 @@
             boardGenerated = true;
         }
 
-        function recordQuarterPayout() {
+        window.recordQuarterPayout = function() {
             const quarter = parseInt(document.getElementById('quarterSelect').value);
             const team1Score = parseInt(document.getElementById('payoutTeam1Score').value);
             const team2Score = parseInt(document.getElementById('payoutTeam2Score').value);
@@ -1507,7 +1507,7 @@
             }
         }
 
-        function randomizeNumbers() {
+        window.randomizeNumbers = function() {
             if (!boardGenerated) {
                 alert('Please generate the board first');
                 return;
@@ -1519,7 +1519,7 @@
             generateBoard();
         }
 
-        function highlightWinner() {
+        window.highlightWinner = function() {
             const team1Score = parseInt(document.getElementById('team1Score').value);
             const team2Score = parseInt(document.getElementById('team2Score').value);
 
@@ -1558,7 +1558,7 @@
             return newArray;
         }
 
-        function printBoard() {
+        window.printBoard = function() {
             if (!boardGenerated) {
                 alert('Please generate the board first');
                 return;
@@ -1569,7 +1569,7 @@
         // Initialize
         populateTeamDropdowns();
 
-        function toggleBulkInput() {
+        window.toggleBulkInput = function() {
             const bulkSection = document.getElementById('bulkInputSection');
             const manualSection = document.getElementById('manualInputSection');
             const toggleBtn = document.getElementById('bulkToggle');
@@ -1585,7 +1585,7 @@
             }
         }
 
-        function processBulkInput() {
+        window.processBulkInput = function() {
             const bulkText = document.getElementById('bulkInput').value.trim();
             
             if (!bulkText) {
@@ -1646,7 +1646,7 @@
             }
         }
 
-        function clearBulkInput() {
+        window.clearBulkInput = function() {
             document.getElementById('bulkInput').value = '';
         }
 
@@ -1858,21 +1858,21 @@
         }
 
         // Override existing functions to save to Firebase
-        const originalGenerateBoard = generateBoard;
-        generateBoard = function() {
-            originalGenerateBoard();
+        const _originalGenerateBoard = window.generateBoard;
+        window.generateBoard = function() {
+            _originalGenerateBoard();
             if (isAdminMode) saveToFirebase();
         };
 
-        const originalRecordQuarterPayout = recordQuarterPayout;
-        recordQuarterPayout = function() {
-            originalRecordQuarterPayout();
+        const _originalRecordQuarterPayout = window.recordQuarterPayout;
+        window.recordQuarterPayout = function() {
+            _originalRecordQuarterPayout();
             if (isAdminMode) saveToFirebase();
         };
 
-        const originalRandomizeNumbers = randomizeNumbers;
-        randomizeNumbers = function() {
-            originalRandomizeNumbers();
+        const _originalRandomizeNumbers = window.randomizeNumbers;
+        window.randomizeNumbers = function() {
+            _originalRandomizeNumbers();
             if (isAdminMode) saveToFirebase();
         };
 
